@@ -1,0 +1,39 @@
+INSERT INTO custom.bse_big_table (
+    fan_id,
+    salesforce_contact_id,
+    cust_action_id,
+    action_email,
+    first_known_action,
+    cust_action_source_system,
+    cust_action,  -- New column for stage name
+    season,
+    product_name
+)
+SELECT
+    o.agilitek_id__c AS fan_id,
+    o.contactid AS salesforce_contact_id,
+    o.id AS cust_action_id,
+    o.email_1__c::text AS action_email,
+    o.createddate::date AS first_known_action,
+    'salesforce' AS cust_action_source_system,
+    CASE
+        WHEN o.qualified_stage_date__c IS NOT NULL THEN 'Qualified'
+        WHEN o.appointment_scheduled_stage_date__c IS NOT NULL THEN 'Appointment Scheduled'
+        WHEN o.appointment_follow_up_stage_date__c IS NOT NULL THEN 'Appointment Follow Up'
+        WHEN o.product_pitched_stage_date__c IS NOT NULL THEN 'Product Pitched'
+        WHEN o.navigating_objections_stage_date__c IS NOT NULL THEN 'Navigating Objections'
+        WHEN o.finalizing_stage_date__c IS NOT NULL THEN 'Finalizing'
+        ELSE 'Unknown'
+    END AS cust_action,
+    o.season__c AS season,
+    o.product__c AS product_name
+FROM sfsc.opportunity o
+WHERE o.record_type_name__c NOT ILIKE '%Partnership%'
+AND (
+    o.qualified_stage_date__c IS NOT NULL
+    OR o.appointment_scheduled_stage_date__c IS NOT NULL
+    OR o.appointment_follow_up_stage_date__c IS NOT NULL
+    OR o.product_pitched_stage_date__c IS NOT NULL
+    OR o.navigating_objections_stage_date__c IS NOT NULL
+    OR o.finalizing_stage_date__c IS NOT NULL
+);
