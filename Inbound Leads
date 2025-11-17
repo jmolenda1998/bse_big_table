@@ -1,0 +1,24 @@
+INSERT INTO custom.bse_big_table (
+    fan_id,
+    salesforce_contact_id,
+    cust_action_id,
+    action_email,
+    first_known_action,
+    cust_action_source_system,
+    cust_action,  -- New column for stage name
+    season,
+    product_name
+)
+SELECT
+	o.agilitek_id__c as "fan_id"
+	, o.contactid as "salesforce_contact_id"
+	, o.id as "cust_action_id"
+	, o.email_1__c as "action_email"
+	, (o.createddate) as "first_known_action"
+	, 'Salesforce' as "cust_action_source_system"
+	, 'Inbound Opportunity' as "cust_action"
+	, o.season__c as "season"
+	, o.product__c as "product_name"
+	--, fcc.id 
+from sfsc.opportunity o 
+where o.opportunity_lead_source__c in ('Conversica', 'Email Inquiry', 'Inbound Phone Call', 'Satisfi Chat', 'Satisfie Webform');
