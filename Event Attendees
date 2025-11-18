@@ -1,0 +1,40 @@
+INSERT INTO custom.bse_big_table (
+      fan_id
+    , salesforce_contact_id
+    , cust_action_id
+    , action_email
+    , first_known_action
+    , cust_action_source_system
+    , cust_action              -- stage / action name
+    , season
+    , product_name
+    , property
+    , cust_action_category
+    , event_opponent_artist
+    , event_name
+)
+SELECT
+      o.agilitek_id__c                               AS fan_id
+    , e.accountid                                    AS salesforce_contact_id
+    , e.id                                           AS cust_action_id
+    , o.email_1__c                                   AS action_email
+    , e.createddate                                  AS first_known_action
+    , 'Salesforce'                                   AS cust_action_source_system
+    , tec.event_type__c                              AS cust_action             -- pick your “stage” field here
+    , CASE
+          WHEN EXTRACT(MONTH FROM e.activitydatetime) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM e.activitydatetime)::int, '-', (EXTRACT(YEAR FROM e.activitydatetime)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM e.activitydatetime)::int - 1), '-', EXTRACT(YEAR FROM e.activitydatetime)::int)
+      END                                            AS season
+    , o.product__c                                   AS product_name
+    , COALESCE(tec.franchise__c, ecc.ticket_event_franchise__c)        AS property
+    , tec.event_type__c                              AS cust_action_category
+    , COALESCE(tec.opponent__c)          AS event_opponent_artist
+    , COALESCE(tec.name, ecc."Event__r.Name")          AS event_name
+FROM sfsc.event e
+LEFT JOIN sfsc.opportunity o 
+    ON o.accountid::text = e.accountid::text
+LEFT JOIN sfsc.experience_capacity__c ecc
+    ON ecc.event__c = e.id
+LEFT JOIN sfsc.ticket_event__c tec 
+    ON ecc.event__c = tec.id;
