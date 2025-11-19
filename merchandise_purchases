@@ -1,1 +1,57 @@
-
+INSERT INTO custom.bse_big_table (
+      fan_id
+    , salesforce_contact_id
+    , cust_action_id
+    , action_email
+    , first_known_action
+    , cust_action_source_system
+    , cust_action
+    , cust_action_date
+    , cust_action_category
+    , season
+    , fiscal_year
+    , event_name
+    , product_name
+    , property
+    , event_date
+    , action_quantity
+)
+SELECT
+      a.fan_id__pc                                AS fan_id
+    , a.id                                        AS salesforce_contact_id
+    , f.order_id                                  AS cust_action_id
+    , f.client_email                              AS action_email
+    , f.order_date                                AS first_known_action
+    , 'Fanatics'                                  AS cust_action_source_system
+    , 'Merchandise Purchase'                      AS cust_action
+    , f.order_date                                AS cust_action_date
+    , f.product_category                          AS cust_action_category
+    , CASE
+          WHEN EXTRACT(MONTH FROM f.order_date) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM f.order_date)::int, '-', (EXTRACT(YEAR FROM f.order_date)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM f.order_date)::int - 1), '-', EXTRACT(YEAR FROM f.order_date)::int)
+      END                                         AS season
+    , CASE
+          WHEN EXTRACT(MONTH FROM f.order_date) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM f.order_date)::int, '-', (EXTRACT(YEAR FROM f.order_date)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM f.order_date)::int - 1), '-', EXTRACT(YEAR FROM f.order_date)::int)
+      END                                         AS fiscal_year
+    , NULL                                        AS event_name
+    , f.product_name                              AS product_name
+    , CASE
+          WHEN f.team ILIKE '%Nets%'   THEN 'Brooklyn Nets'
+          WHEN f.team ILIKE '%WNBA%'   THEN 'New York Liberty'
+          WHEN f.team ILIKE '%Lib%'    THEN 'New York Liberty'
+          WHEN f.team ILIKE '%NBA%'    THEN 'NBA'
+          ELSE 'Other'
+      END                                         AS property
+    , NULL                                        AS event_date
+    , f.qty_sold                                  AS action_quantity
+FROM fanatics.merchandise f
+LEFT JOIN fdp.email e
+       ON f.client_email = e.email
+      AND e.systemname = 'fanatics'
+LEFT JOIN fdp.phone p
+       ON p.fanid = e.fanid
+LEFT JOIN sfsc.account a
+       ON a.fan_id__pc = e.fanid;
