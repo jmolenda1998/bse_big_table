@@ -1,0 +1,61 @@
+INSERT INTO custom.bse_big_table (
+      fan_id
+    , salesforce_contact_id
+    , cust_action_id
+    , action_email
+    , first_known_action
+    , cust_action_source_system
+    , cust_action
+    , cust_action_date
+    , cust_action_category
+    , season
+    , fiscal_year
+    , event_name
+    , product_name
+    , property
+    , event_date
+    , action_quantity
+)
+SELECT
+      a.agilitek_id__pc                             AS fan_id
+    , coalesce(fcc.contact__c , a.id, c.accountid)                                     AS salesforce_contact_id
+    , fcc.id                                        AS cust_action_id
+    , fcc.email__c                                  AS action_email
+    , fcc.submit_date__c                            AS first_known_action
+    , 'Salesforce'                                  AS cust_action_source_system
+    , 'Sweepstakes Entry'                           AS cust_action
+    , fcc.submit_date__c                            AS cust_action_date
+    , 'Form Submission'                             AS cust_action_category
+    , CASE
+          WHEN EXTRACT(MONTH FROM fcc.submit_date__c) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM fcc.submit_date__c)::int, '-', (EXTRACT(YEAR FROM fcc.submit_date__c)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM fcc.submit_date__c)::int - 1), '-', EXTRACT(YEAR FROM fcc.submit_date__c)::int)
+      END                                           AS season
+    , CASE
+          WHEN EXTRACT(MONTH FROM fcc.submit_date__c) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM fcc.submit_date__c)::int, '-', (EXTRACT(YEAR FROM fcc.submit_date__c)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM fcc.submit_date__c)::int - 1), '-', EXTRACT(YEAR FROM fcc.submit_date__c)::int)
+      END                                           AS fiscal_year
+    , fcc.campaign_id__c                            AS event_name
+    , NULL                                          AS product_name
+    , CASE
+          WHEN fcc.campaign_id__c ILIKE '%Nets%'                  THEN 'Brooklyn Nets'
+          WHEN fcc.campaign_id__c ILIKE '%Brooklyn Basketball%'   THEN 'Brooklyn Basketball'
+          WHEN fcc.campaign_id__c ILIKE '%Liberty%'               THEN 'New York Liberty'
+          WHEN fcc.campaign_id__c ILIKE '%NYL%'                   THEN 'New York Liberty'
+          WHEN fcc.campaign_id__c ILIKE '%Planet Brooklyn%'       THEN 'Planet Brooklyn'
+          WHEN fcc.campaign_id__c ILIKE '%Barclays Center%'       THEN 'Barclays Center'
+          WHEN fcc.campaign_id__c ILIKE '%BC%'                    THEN 'Barclays Center'
+          WHEN fcc.campaign_id__c ILIKE '%BK%'                    THEN 'Brooklyn Nets'
+          WHEN fcc.campaign_id__c ILIKE '%BK Mag%'                THEN 'Brooklyn Magazine'
+          WHEN fcc.campaign_id__c ILIKE '%Brooklyn Basketball%'   THEN 'Brooklyn Basketball'
+          ELSE 'Other'
+      END                                           AS property
+    , fcc.submit_date__c                            AS event_date
+    , 1                                             AS action_quantity
+FROM sfsc.form_contact__c fcc
+LEFT JOIN sfsc.contact c
+       ON c.id = fcc.contact__c
+LEFT JOIN sfsc.account a
+       ON a.id = c.accountid 
+WHERE fcc.referrer__c = 'WIT Sports'
