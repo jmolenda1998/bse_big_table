@@ -1,3 +1,4 @@
+--BEGIN;
 
 INSERT INTO custom.bse_big_table (
       fan_id
@@ -14,21 +15,20 @@ INSERT INTO custom.bse_big_table (
     , merch_category
     , season
     , fiscal_year
-    , event_name
     , product_name
     , product_cost
     , action_quantity
     , purchase_price
     , property
 )
-
+with audience as (
 SELECT
       a.fan_id__pc                           AS fan_id
     , a.id                                    AS salesforce_contact_id
     , f.order_id                                        AS cust_action_id
     , f.client_email                                  AS action_email
     , f.order_date                            AS first_known_action
-    , p.phone 									as action_phone
+    , f.ship_address_tel as action_phone
     , 'Fanatics'                                  AS cust_action_source_system
     , 'Merchandise Purchase'                           AS cust_action
     , f.order_date                            AS cust_action_date
@@ -46,8 +46,7 @@ SELECT
               THEN CONCAT(EXTRACT(YEAR FROM f.order_date)::int, '-', (EXTRACT(YEAR FROM f.order_date)::int + 1))
           ELSE CONCAT((EXTRACT(YEAR FROM f.order_date)::int - 1), '-', EXTRACT(YEAR FROM f.order_date)::int)
       END                                           AS fiscal_year
-    , null                           AS event_name
-    , f.product_name                                      AS product_name
+    , left(f.product_name,100)                                      AS product_name
     , f.unit_price 									as product_cost
     , f.qty_sold                                             AS action_quantity
     , (f.unit_price * f.qty_sold)					as purchase_price
@@ -59,10 +58,15 @@ SELECT
           else 'Other'
       END                                           AS property
 FROM fanatics.merchandise f
-left join fdp.email e
-	on f.client_email = e.email  
-		and e.systemname = 'fanatics'
-left join fdp.phone p
-	on p.fanid = e.fanid
+left join fdp.fan f2
+	on text(coalesce(f2.email1,f2.email2)) = text(f.client_email)
+		and text(f2.systemnames) ilike '%fanatics%'
+--left join fdp.email e
+	--on f.client_email = e.email  
+		--and e.systemname = 'fanatics'
+--left join fdp.phone p
+	--on p.fanid = e.fanid
 left join sfsc.account a
-	on a.fan_id__pc = e.fanid
+	on a.fan_id__pc = f2.fanid
+
+--ROLLBACK;
