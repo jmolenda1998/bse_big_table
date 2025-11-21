@@ -1,1 +1,47 @@
 
+INSERT INTO custom.bse_big_table (
+      fan_id
+    , salesforce_contact_id
+    , cust_action_id
+    , action_email
+    , action_phone
+    , first_known_action
+    , cust_action_source_system
+    , cust_action
+    , cust_action_date
+    , season
+    , fiscal_year
+    , property
+    , cust_action_category
+    , event_opponent_artist
+    , event_name
+    , event_genre
+)
+SELECT
+      a.agilitek_id__pc                                AS fan_id
+    , coalesce(erc.attendee__c, a.id)                                   AS salesforce_contact_id
+    , erc.id                                           AS cust_action_id
+    , erc.contact_email__c                                   AS action_email
+    , erc.guest_phone_number__c 						as action_phone
+    , erc.experience_capacity_date__c                                  AS first_known_action
+    , 'Salesforce'                                   AS cust_action_source_system
+    , 'Experience RSVP'                              AS cust_action   
+    , erc.event_date__c								as cust_action_date
+    , erc.event_registration_season__c                                            AS season
+    , CASE
+          WHEN EXTRACT(MONTH FROM erc.event_date__c) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM erc.event_date__c)::int, '-', (EXTRACT(YEAR FROM erc.event_date__c)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM erc.event_date__c)::int - 1), '-', EXTRACT(YEAR FROM erc.event_date__c)::int)
+      END                                           AS fiscal_year
+  --  , o.product__c                                   AS product_name
+    , COALESCE(tec.franchise__c, erc.ticket_event_franchise__c)        AS property
+    , coalesce(tec.event_type__c, erc.type__c)                              AS cust_action_category
+    , COALESCE(tec.opponent__c)          AS event_opponent_artist
+    , COALESCE(tec.name, erc."Event_Game__r.Name")          AS event_name
+    , tec.event_genre__C 							as event_genre
+FROM sfsc.event_registration__c erc
+LEFT JOIN sfsc.account a
+	on a.contact_id_18__pc = erc.attendee__c 
+left join sfsc.ticket_event__c tec
+	on date(erc.event_date__c ) = tec.date__c 
+where erc.rsvp__c is true
