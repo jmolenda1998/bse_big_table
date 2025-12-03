@@ -1,0 +1,53 @@
+INSERT INTO custom.bse_big_table (
+    fan_id,
+    salesforce_contact_id,
+    cust_action_id,
+    action_email,
+    first_known_action,
+    cust_action_source_system,
+    action_phone,
+    cust_action_date,
+    cust_action, 
+    cust_action_category,
+    property,
+    purchase_price,
+    fiscal_year,
+    season,
+    product_name,
+    event_name,
+    event_date,
+    event_opponent_artist
+)
+SELECT
+    o.agilitek_id__c AS fan_id,
+    o.contactid AS salesforce_contact_id,
+    o.id AS cust_action_id,
+    o.email_1__c::text AS action_email,
+    o.createddate::date AS first_known_action,
+    'Salesforce' AS cust_action_source_system,
+    o.phone_1__c as action_phone
+    , o.stage_9_date__c as cust_action_date
+    , 'Closed Won Opportunity' as cust_action
+    , 'Opportunity' as cust_action_category
+    , o.franchise__c as property
+    , o.amount as purchase_price
+    , CASE
+          WHEN EXTRACT(MONTH FROM o.stage_9_date__c) >= 7
+              THEN CONCAT(EXTRACT(YEAR FROM o.stage_9_date__c)::int, '-', (EXTRACT(YEAR FROM o.stage_9_date__c)::int + 1))
+          ELSE CONCAT((EXTRACT(YEAR FROM o.stage_9_date__c)::int - 1), '-', EXTRACT(YEAR FROM o.stage_9_date__c)::int)
+      END                                           AS fiscal_year,
+    o.season__c AS season,
+    o.product__c AS product_name,
+    o.event_name__c as event_name,
+    o.ticket_event_date__c as event_date,
+    o.opponent__c as event_opponent_artist
+FROM sfsc.opportunity o
+WHERE o.record_type_name__c NOT ILIKE '%Partnership%'
+AND (
+    o.qualified_stage_date__c IS NOT NULL
+    OR o.appointment_scheduled_stage_date__c IS NOT NULL
+    OR o.appointment_follow_up_stage_date__c IS NOT NULL
+    OR o.product_pitched_stage_date__c IS NOT NULL
+    OR o.navigating_objections_stage_date__c IS NOT NULL
+    OR o.finalizing_stage_date__c IS NOT NULL
+);
