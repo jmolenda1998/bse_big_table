@@ -1,3 +1,18 @@
+insert into custom.bse_big_table (
+cust_action_id
+, fan_id
+, salesforce_contact_id
+, action_email
+, action_phone
+, cust_action_source_system
+, cust_action_date
+, cust_action_category
+, cust_Action
+, property
+, season
+, fiscal_year
+, action_quantity
+)
 select 
 	t.id as "cust_action_id"
 	,a.archtics_id__pc as "fan_id"
