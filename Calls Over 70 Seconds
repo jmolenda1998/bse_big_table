@@ -10,6 +10,11 @@ cust_action_id
 , cust_Action
 , property
 , season
+, product_name
+, campaign_name
+, "section"
+, "row" 
+, access_level
 , fiscal_year
 , action_quantity
 )
@@ -23,27 +28,13 @@ select
 	, t.date_completed__c as "cust_action_date"
 	, t.calltype as "cust_action_category"
 	, 'Call Over 70 Seconds' as "cust_action"
-	, case 
-		when t.owner_role__c ilike 'Nets%' then 'Brooklyn Nets'
-		when t.owner_role__c ilike '%Liberty%' then 'New York Liberty'
-		when t.owner_role__c ilike '%Concerts%' then 'Barclays Center'
-		else 'Unknown'
-	end as "property"
-	,CASE
-    WHEN EXTRACT(MONTH FROM t.date_completed__c) >= 7 THEN
-        CONCAT(
-            (EXTRACT(YEAR FROM t.date_completed__c))::int,
-            '-',
-            (EXTRACT(YEAR FROM t.date_completed__c))::int + 1
-        )
-    ELSE
-        CONCAT(
-            (EXTRACT(YEAR FROM t.date_completed__c))::int - 1,
-            '-',
-            (EXTRACT(YEAR FROM t.date_completed__c))::int
-        )
-END AS season
-
+	, o.franchise__c as "property"
+	,o.season__c as "season"
+	, o.product__c as "product"
+	, c.name as "campaign_name"
+	, o.section__c as "section"
+	, o.row__c as "row"
+	, o.access_levell__c as "access_level"
 	, CASE
     WHEN EXTRACT(MONTH FROM t.date_completed__c) >= 7 THEN
         CONCAT(
@@ -62,6 +53,8 @@ END AS "fiscal_year"
 from sfsc.task t 
 left join sfsc.account a
  	on a.id = t.accountid 
-left join sfsc.campaign c 
-	on c.id = t.koreps__campaign_id__c 
+left join sfsc.opportunity o
+	on o.id = t.whatid
+left join sfsc.campaign c
+	on c.id = o.campaignid
 where t.calldurationinseconds >= 70
