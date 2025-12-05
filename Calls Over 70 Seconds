@@ -1,0 +1,52 @@
+select 
+	t.id as "cust_action_id"
+	,a.archtics_id__pc as "fan_id"
+	,t.accountid as "salesforce_contact_id"
+	, a.email__c as "action_email"
+	, a.phone as "action_phone"
+	, 'Salesforce' as "cust_action_source_system"
+	, t.date_completed__c as "cust_action_date"
+	, t.calltype as "cust_action_category"
+	, 'Call Over 70 Seconds' as "cust_action"
+	, case 
+		when t.owner_role__c ilike 'Nets%' then 'Brooklyn Nets'
+		when t.owner_role__c ilike '%Liberty%' then 'New York Liberty'
+		when t.owner_role__c ilike '%Concerts%' then 'Barclays Center'
+		else 'Unknown'
+	end as "property"
+	,CASE
+    WHEN EXTRACT(MONTH FROM t.date_completed__c) >= 7 THEN
+        CONCAT(
+            (EXTRACT(YEAR FROM t.date_completed__c))::int,
+            '-',
+            (EXTRACT(YEAR FROM t.date_completed__c))::int + 1
+        )
+    ELSE
+        CONCAT(
+            (EXTRACT(YEAR FROM t.date_completed__c))::int - 1,
+            '-',
+            (EXTRACT(YEAR FROM t.date_completed__c))::int
+        )
+END AS season
+
+	, CASE
+    WHEN EXTRACT(MONTH FROM t.date_completed__c) >= 7 THEN
+        CONCAT(
+            (EXTRACT(YEAR FROM t.date_completed__c))::int,
+            '-',
+            (EXTRACT(YEAR FROM t.date_completed__c))::int + 1
+        )
+    ELSE
+        CONCAT(
+            (EXTRACT(YEAR FROM t.date_completed__c))::int - 1,
+            '-',
+            (EXTRACT(YEAR FROM t.date_completed__c))::int
+        )
+END AS "fiscal_year"
+	, 1 as "action_quantity"
+from sfsc.task t 
+left join sfsc.account a
+ 	on a.id = t.accountid 
+left join sfsc.campaign c 
+	on c.id = t.koreps__campaign_id__c 
+where t.calldurationinseconds >= 70
