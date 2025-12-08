@@ -1,0 +1,65 @@
+-- WE ONLY ADDED DATA FOR TEXTS RELATED TO OPPORTUNITIES WHICH IS LIKE 95% OF TEXTS. WE WILL STILL NEED TO DO THIS FOR TEXTS RELATED TO ACCOUNTS
+
+insert into custom.bse_big_table (
+
+cust_action_id
+, fan_id
+,salesforce_contact_id
+,action_email
+,action_phone
+,cust_action_source_system
+, cust_action_date
+, cust_action_category
+, cust_action 
+, property
+, season
+, product_name
+, campaign_name
+, "section"
+, row
+, access_level
+, fiscal_year
+, action_quantity
+)select 
+	ttmc.id as "cust_action_id"
+	,co.fan_id__c as "fan_id"--con
+	,co.accountid as "salesforce_contact_id"--con
+	, co.email as "action_email"--con
+	, co.phone as "action_phone"
+	, 'Salesforce' as "cust_action_source_system"
+	, ttmc.createddate as "cust_action_date"
+	, ttmc."RecordType.Name" as "cust_action_category"
+	, 'SMS Reply' as "cust_action"
+	, o.franchise__c as "property"
+	,o.season__c as "season"
+	, o.product__c as "product_name"
+	, c.name as "campaign_name"
+	, o.section__c as "section"
+	, o.row__c as "row"
+	, o.access_levell__c as "access_level"
+	, CASE
+    WHEN EXTRACT(MONTH FROM ttmc.createddate) >= 7 THEN
+        CONCAT(
+            (EXTRACT(YEAR FROM ttmc.createddate))::int,
+            '-',
+            (EXTRACT(YEAR FROM ttmc.createddate))::int + 1
+        )
+    ELSE
+        CONCAT(
+            (EXTRACT(YEAR FROM ttmc.createddate))::int - 1,
+            '-',
+            (EXTRACT(YEAR FROM ttmc.createddate))::int
+        )
+END AS "fiscal_year"
+	, 1 as "action_quantity"
+from sfsc.tdc_tsw__message__c ttmc 
+join sfsc.opportunity o
+	on o.id = ttmc.tdc_tsw__opportunity__c
+left join sfsc.contact co
+	on co.id = o.customer__c
+left join fdp.fan f
+	on f.fanid = co.fan_id__c 
+left join sfsc.campaign c
+	on c.id = o.campaignid
+where ttmc.name = 'Incoming'
+	and ttmc.tdc_tsw__related_object__c = 'Opportunity'
