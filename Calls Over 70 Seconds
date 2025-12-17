@@ -20,10 +20,10 @@ cust_action_id
 )
 select 
 	t.id as "cust_action_id"
-	,a.archtics_id__pc as "fan_id"
+	, co.fan_id__c as "fan_id"
 	,t.accountid as "salesforce_contact_id"
-	, a.email__c as "action_email"
-	, a.phone as "action_phone"
+	, co.email as "action_email"
+	, co.phone as "action_phone"
 	, 'Salesforce' as "cust_action_source_system"
 	, t.date_completed__c as "cust_action_date"
 	, t.calltype as "cust_action_category"
@@ -51,10 +51,10 @@ select
 END AS "fiscal_year"
 	, 1 as "action_quantity"
 from sfsc.task t 
-left join sfsc.account a
- 	on a.id = t.accountid 
 left join sfsc.opportunity o
 	on o.id = t.whatid
+join sfsc.contact co
+	on co.id = o.customer__c
 left join sfsc.campaign c
 	on c.id = o.campaignid
 where t.calldurationinseconds >= 70
