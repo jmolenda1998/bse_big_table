@@ -3,7 +3,6 @@ INSERT INTO custom.bse_big_table (
     salesforce_contact_id,
     cust_action_id,
     action_email,
-    first_known_action,
     cust_action_source_system,
     action_phone,
     cust_action_date,
@@ -16,14 +15,15 @@ INSERT INTO custom.bse_big_table (
     product_name,
     event_name,
     event_date,
-    event_opponent_artist
+    event_opponent_artist,
+    campaign_name
 )
-SELECT
-    o.agilitek_id__c AS fan_id,
+    
+ SELECT
+    co.agilitek_id__c AS fan_id,
     o.contactid AS salesforce_contact_id,
     o.id AS cust_action_id,
     o.email_1__c::text AS action_email,
-    o.createddate::date AS first_known_action,
     'Salesforce' AS cust_action_source_system,
     o.phone_1__c as action_phone
     , o.stage_9_date__c as cust_action_date
@@ -31,6 +31,7 @@ SELECT
     , 'Opportunity' as cust_action_category
     , o.franchise__c as property
     , o.amount as purchase_price
+    , c."name"
     , CASE
           WHEN EXTRACT(MONTH FROM o.stage_9_date__c) >= 7
               THEN CONCAT(EXTRACT(YEAR FROM o.stage_9_date__c)::int, '-', (EXTRACT(YEAR FROM o.stage_9_date__c)::int + 1))
@@ -42,6 +43,10 @@ SELECT
     o.ticket_event_date__c as event_date,
     o.opponent__c as event_opponent_artist
 FROM sfsc.opportunity o
+join sfsc.contact co
+	on co.id = o.customer__c
+left join sfsc.campaign c
+	on c.id = o.campaignid
 WHERE o.record_type_name__c NOT ILIKE '%Partnership%'
 AND (
     o.qualified_stage_date__c IS NOT NULL
