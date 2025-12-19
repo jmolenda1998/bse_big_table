@@ -7,14 +7,14 @@ INSERT INTO custom.bse_big_table (
     cust_action_source_system,
     cust_action,  -- New column for stage name
     season,
-    product_name
+    product_name,
+    campaign_name
 )
 SELECT
-    o.agilitek_id__c AS fan_id,
+    co.fan_id__c AS fan_id,
     o.contactid AS salesforce_contact_id,
     o.id AS cust_action_id,
     o.email_1__c::text AS action_email,
-    o.createddate::date AS first_known_action,
     'salesforce' AS cust_action_source_system,
     CASE
         WHEN o.qualified_stage_date__c IS NOT NULL THEN 'Stage Change - Qualified'
@@ -26,8 +26,13 @@ SELECT
         ELSE 'Unknown'
     END AS cust_action,
     o.season__c AS season,
-    o.product__c AS product_name
+    o.product__c AS product_name,
+    c."name" as campaign_name
 FROM sfsc.opportunity o
+join sfsc.contact co
+	on co.id = o.customer__c
+left join sfsc.campaign c
+	on c.id = o.campaignid
 WHERE o.record_type_name__c NOT ILIKE '%Partnership%'
 AND (
     o.qualified_stage_date__c IS NOT NULL
@@ -35,5 +40,4 @@ AND (
     OR o.appointment_follow_up_stage_date__c IS NOT NULL
     OR o.product_pitched_stage_date__c IS NOT NULL
     OR o.navigating_objections_stage_date__c IS NOT NULL
-    OR o.finalizing_stage_date__c IS NOT NULL
-);
+    OR o.finalizing_stage_date__c IS NOT null)
